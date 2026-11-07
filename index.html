@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f4f4f5"><link rel="manifest" href="manifest.webmanifest">
+<title>NOVA AI</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#18181b;background:#f4f4f5}
+*{box-sizing:border-box}body{margin:0}.wrap{max-width:760px;margin:auto;padding:20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+h1{font-size:28px;margin:12px 0}small,.muted{color:#71717a}
+.card{background:white;border:1px solid #e4e4e7;border-radius:18px;padding:16px;margin:14px 0}
+input,textarea,button,select{font:inherit;border-radius:12px;padding:12px;border:1px solid #d4d4d8}
+input,textarea{width:100%;background:#fff}button{background:#18181b;color:white;border:0;cursor:pointer}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.task{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee}
+.task span{flex:1}.done{text-decoration:line-through;color:#888}
+nav{display:flex;gap:8px;flex-wrap:wrap}nav button{background:#e4e4e7;color:#18181b}
+#reply{white-space:pre-wrap;background:#fafafa;border-radius:12px;padding:12px;min-height:48px}
+</style></head>
+<body><main class="wrap">
+<header><div><small>PERSONAL ASSISTANT</small><h1>NOVA AI</h1></div>
+<select id="lang" aria-label="Language"><option value="ar">العربية</option><option value="en">English</option><option value="fr">Français</option></select></header>
+<p class="muted" id="tagline">مساعدك لتنظيم المهام والتقدم نحو أهدافك.</p>
+<nav><button id="tabTasks">المهام</button><button id="tabChat">المساعد التجريبي</button><button id="tabSettings">الإعدادات</button></nav>
+<section id="tasks" class="card"><h2 id="tasksTitle">مهامي</h2>
+<div class="row"><input id="taskInput" placeholder="اكتب مهمة جديدة"><button id="addTask">إضافة</button></div>
+<div id="taskList"></div><button id="clearDone" style="margin-top:12px">حذف المكتمل</button></section>
+<section id="chat" class="card" hidden><h2>المساعد التجريبي</h2><p class="muted">هذه نسخة تجريبية بردود ثابتة، وليست مرتبطة بذكاء اصطناعي مباشر.</p>
+<textarea id="question" rows="3" placeholder="اكتب سؤالك هنا"></textarea><button id="ask" style="margin-top:8px">إرسال</button><p id="reply">سيظهر الرد هنا.</p></section>
+<section id="settings" class="card" hidden><h2>الإعدادات والخصوصية</h2><p>تُحفظ المهام على هذا الجهاز فقط باستخدام التخزين المحلي.</p><div class="row"><button id="export">تصدير نسخة احتياطية</button><button id="erase">مسح كل البيانات</button></div></section>
+<footer class="muted"><small>NOVA AI 1.1 · Prototype · البيانات محلية على جهازك</small></footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);let tasks=JSON.parse(localStorage.getItem('nova_tasks')||'[]');
+function save(){localStorage.setItem('nova_tasks',JSON.stringify(tasks));render()}
+function render(){ $('taskList').innerHTML='';tasks.forEach((t,i)=>{let d=document.createElement('div');d.className='task';let c=document.createElement('input');c.type='checkbox';c.checked=t.done;c.style.width='auto';c.onchange=()=>{tasks[i].done=c.checked;save()};let s=document.createElement('span');s.textContent=t.text;if(t.done)s.className='done';let b=document.createElement('button');b.textContent='×';b.onclick=()=>{tasks.splice(i,1);save()};d.append(c,s,b);$('taskList').append(d)})}
+$('addTask').onclick=()=>{let v=$('taskInput').value.trim();if(v){tasks.push({text:v,done:false});$('taskInput').value='';save()}};
+$('taskInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('addTask').click()});
+$('clearDone').onclick=()=>{tasks=tasks.filter(t=>!t.done);save()};
+function show(id){['tasks','chat','settings'].forEach(x=>$(x).hidden=x!==id)}
+$('tabTasks').onclick=()=>show('tasks');$('tabChat').onclick=()=>show('chat');$('tabSettings').onclick=()=>show('settings');
+$('ask').onclick=()=>{$('reply').textContent='أنا NOVA AI التجريبي. هذه الواجهة لا تتصل حالياً بخدمة ذكاء اصطناعي. يمكننا ربطها لاحقاً بخادم آمن.'};
+$('export').onclick=()=>{let blob=new Blob([JSON.stringify({tasks},null,2)],{type:'application/json'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nova-backup.json';a.click();URL.revokeObjectURL(a.href)};
+$('erase').onclick=()=>{if(confirm('هل تريد مسح كل المهام؟')){tasks=[];save()}};
+const translations={ar:{tag:'مساعدك لتنظيم المهام والتقدم نحو أهدافك.',tasks:'مهامي',add:'إضافة',placeholder:'اكتب مهمة جديدة',clear:'حذف المكتمل'},en:{tag:'Your assistant for organizing tasks and moving toward your goals.',tasks:'My tasks',add:'Add',placeholder:'Write a new task',clear:'Clear completed'},fr:{tag:'Votre assistant pour organiser vos tâches et avancer vers vos objectifs.',tasks:'Mes tâches',add:'Ajouter',placeholder:'Écrire une nouvelle tâche',clear:'Effacer les tâches terminées'}};
+$('lang').onchange=()=>{let t=translations[$('lang').value];$('tagline').textContent=t.tag;$('tasksTitle').textContent=t.tasks;$('addTask').textContent=t.add;$('taskInput').placeholder=t.placeholder;$('clearDone').textContent=t.clear;document.documentElement.lang=$('lang').value;document.documentElement.dir=$('lang').value==='ar'?'rtl':'ltr'};
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+render();
+</script></body></html>
